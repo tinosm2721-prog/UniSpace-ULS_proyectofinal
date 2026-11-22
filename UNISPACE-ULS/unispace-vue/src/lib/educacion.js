@@ -1,7 +1,7 @@
 // lib/educacion.js
 // Funciones del lado del cliente para educación
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 /**
  * Obtener el token de las cookies

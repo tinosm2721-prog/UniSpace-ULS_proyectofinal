@@ -17,6 +17,22 @@ import {
 const app = express();
 app.use(express.json({ limit: "100kb" }));
 
+// CORS: permite llamadas desde el frontend (Netlify u otro origen).
+// Define CORS_ORIGIN en Render con la URL de Netlify, separadas por coma. Si no existe, permite cualquier origen.
+const CORS_ORIGINS = (process.env.CORS_ORIGIN || "*").split(",").map((o) => o.trim());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed = CORS_ORIGINS.includes("*") ? "*" : CORS_ORIGINS.includes(origin) ? origin : null;
+  if (allowed) {
+    res.setHeader("Access-Control-Allow-Origin", allowed);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(allowed ? 204 : 403);
+  next();
+});
+
 const API_URL = process.env.VITE_API_URL || "http://localhost:8000/api";
 const MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini"; // debe soportar herramientas
 const ME_PATH = "/auth/me"; // endpoint que usa getMe() en src/lib/auth.js
@@ -328,4 +344,5 @@ app.delete("/api/objetos-perdidos/:id", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(3001, () => console.log("Servidor local en http://localhost:3001"));
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
