@@ -1,0 +1,28 @@
+---
+import BaseLayout from "../layouts/Layout.astro";
+import Navbar from "@/components/navbar/navbar.astro";
+import Sidebar from "@/components/Sidebar.astro";
+import ObjetosPerdidos from "@/components/vue/ObjetosPerdidos.vue";
+import { getUser } from "@/lib/auth-server";
+
+const token = Astro.cookies.get("token")?.value;
+if (!token) return Astro.redirect("/login");
+const user = await getUser(token);
+---
+
+<BaseLayout>
+  <div class="navbar-fixed"><Navbar {...user} /></div>
+  <aside class="sidebar-area"><Sidebar /></aside>
+  <main class="page-main">
+    <h1 class="text-3xl font-black mb-2">Objetos perdidos</h1>
+    <p class="mb-6 opacity-70">Publicá lo que perdiste o encontraste e indicá el edificio o aula del campus.</p>
+    <ObjetosPerdidos client:load />
+  </main>
+</BaseLayout>
+
+<style>
+  .navbar-fixed { position: sticky; top: 0; z-index: 40; }
+  .sidebar-area { position: fixed; top: 90px; left: 18px; width: 220px; z-index: 30; }
+  .page-main { max-width: 860px; margin: 0 auto; padding: 100px 1.5rem 4rem; }
+  @media (max-width: 768px) { .sidebar-area { display: none; } }
+</style>

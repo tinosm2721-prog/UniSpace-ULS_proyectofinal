@@ -1,0 +1,70 @@
+﻿<script setup>
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const links = [
+  { href: '/dashboard', label: 'Inicio' },
+  { href: '/mapa', label: 'Mapa del campus' },
+  { href: '/tour', label: 'Bienvenida / Tour' },
+  { href: '/publicaciones/publicaciones', label: 'Publicaciones' },
+  { href: '/podcast/podcast', label: 'Podcast' },
+  { href: '/objetos-perdidos', label: 'Objetos perdidos' },
+]
+</script>
+
+<template>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h2>Panel</h2>
+    </div>
+    <nav class="sidebar-links">
+      <router-link
+        v-for="link in links"
+        :key="link.href"
+        :to="link.href"
+        :class="route.path === link.href ? 'active' : ''"
+      >
+        {{ link.label }}
+      </router-link>
+    </nav>
+  </aside>
+</template>
+
+<style scoped>
+.sidebar{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:1.5rem;
+}
+.sidebar-top h2{
+  margin:0;
+  font-size:1.2rem;
+  color:#0f172a;
+  font-weight:800;
+}
+.sidebar-links{
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+}
+.sidebar-links a{
+  text-decoration:none;
+  padding:.95rem 1rem;
+  border-radius:16px;
+  color:#334155;
+  font-weight:600;
+  transition:.25s ease;
+}
+.sidebar-links a:hover{
+  background:#eef2ff;
+  color:#2563eb;
+  transform: translateX(4px);
+}
+.sidebar-links a.active{
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color:white;
+  box-shadow: 0 10px 25px rgba(37,99,235,.2);
+}
+</style>

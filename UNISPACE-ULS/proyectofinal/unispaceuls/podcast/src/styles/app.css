@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, corporate;
+}
+
+@theme {
+  --color-uls: #1a4fa0;
+  --color-uls-dark: #0f3275;
+  --color-uls-accent: #f0a500;
+}
+
+html,
+body {
+  min-height: 100%;
+}

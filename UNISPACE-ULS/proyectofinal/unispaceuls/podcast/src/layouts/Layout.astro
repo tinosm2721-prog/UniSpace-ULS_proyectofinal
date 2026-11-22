@@ -1,0 +1,32 @@
+---
+import "../styles/app.css";
+import Chatbot from "../components/vue/Chatbot.vue";
+---
+
+<html lang="es" data-theme="corporate">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UniSpace - ULS</title>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <div class="app-layout">
+      <main class="app-content">
+        <slot />
+      </main>
+    </div>
+    <Chatbot client:load />
+  </body>
+</html>
+
+<style>
+  .app-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+</style>

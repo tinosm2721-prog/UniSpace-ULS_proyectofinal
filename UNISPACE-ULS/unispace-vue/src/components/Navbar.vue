@@ -1,0 +1,36 @@
+﻿<script setup>
+import BotonSalir from './BotonSalir.vue'
+import MenuMovil from './MenuMovil.vue'
+defineProps({
+  id: { type: [Number, String], default: null },
+  nombre: { type: String, default: '' },
+  apellido: { type: String, default: '' },
+  perfil: { type: Object, default: () => ({}) },
+})
+</script>
+
+<template>
+  <div class="navbar bg-base-100 border-b border-base-300 px-2 md:px-6 h-[72px]">
+    <MenuMovil />
+
+    <div class="flex-1 min-w-0">
+      <router-link to="/dashboard" class="text-xl md:text-3xl font-extrabold text-primary px-2 hover:opacity-80 transition truncate block">
+        UniSpace - ULS
+      </router-link>
+    </div>
+
+    <div class="flex-none flex items-center gap-2 md:gap-3">
+      <span class="hidden md:inline text-lg font-semibold text-base-content/70">{{ nombre ?? '' }}</span>
+
+      <router-link v-if="id" to="/usuario/meperfil" class="btn btn-ghost btn-circle avatar" :class="{ 'avatar-placeholder': !perfil?.foto_perfil }">
+        <div v-if="perfil?.foto_perfil" class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+          <img :src="`http://127.0.0.1:8000/storage/${perfil.foto_perfil}`" alt="Mi foto" />
+        </div>
+        <div v-else class="bg-primary text-primary-content w-10 rounded-full flex items-center justify-center font-bold">
+          {{ nombre?.charAt(0) ?? 'U' }}
+        </div>
+      </router-link>
+      <BotonSalir />
+    </div>
+  </div>
+</template>

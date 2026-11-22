@@ -1,0 +1,275 @@
+import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { EDIFICIOS, CAMPUS_CENTER } from "../src/data/campus.js";
+
+const API_URL = process.env.VITE_API_URL || "http://localhost:8000/api";
+const FACEBOOK_FILE = fileURLToPath(new URL("./facebook.json", import.meta.url));
+const FACEBOOK_PAGE = "https://www.facebook.com/ULuterana";
+
+// Preguntas sugeridas para quien no sabe qué preguntar.
+export const SUGERENCIAS = [
+  "¿Qué novedades hay en la ULS?",
+  "¿Qué carreras puedo estudiar?",
+  "¿Cómo me matriculo para el ciclo 01-2027?",
+  "¿Hay algún curso o evento próximo?",
+  "¿Cómo llego a la biblioteca?",
+  "¿Qué objetos perdidos hay?",
+];
+
+async function getJSON(path, token) {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+const getPublicaciones = (token) => getJSON("/publicaciones?page=1&per_page=50", token);
+const getPodcast = (token) => getJSON("/podcast", token);
+
+function asList(payload) {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.data)) return payload.data;
+  return [];
+}
+
+// ---------- Publicaciones de Facebook (cargadas con scripts/fb.mjs) ----------
+function hoyLocal() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+async function leerFacebook() {
+  try {
+    const all = JSON.parse(await fs.readFile(FACEBOOK_FILE, "utf8"));
+    if (!Array.isArray(all)) return [];
+    const hoy = hoyLocal();
+    // Se descartan las publicaciones cuya fecha de vencimiento ya pasó.
+    return all
+      .filter((p) => p && p.texto && (!p.vence || p.vence >= hoy))
+      .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  } catch {
+    return [];
+  }
+}
+
+const norm = (s) =>
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const STOP = new Set([
+  "como", "donde", "cuando", "para", "sobre", "quiero", "saber", "puedo", "tiene", "tienen",
+  "esta", "estan", "este", "esos", "esas", "cual", "cuales", "universidad", "publicaciones",
+  "publicacion", "facebook", "luterana", "salvadorena", "hay", "algun", "alguna", "proximo",
+  "proxima", "favor", "estudiar", "estudio", "estudiante", "estudiantes", "ciclo", "dime", "decime", "cuentame", "contame", "informacion", "info",
+]);
+
+function fechaCorta(iso) {
+  const [y, m, d] = String(iso || "").split("-");
+  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  return d && m ? `${Number(d)} ${meses[Number(m) - 1] || m}` : "";
+}
+
+function buscarFacebook(question, posts, max = 3) {
+  const palabras = [...new Set(norm(question).split(/[^a-z0-9]+/))]
+    .filter((w) => w.length > 3 && !STOP.has(w))
+    .map((w) => (w.length > 6 ? w.slice(0, 6) : w));
+  if (!palabras.length) return [];
+  return posts
+    .map((p) => {
+      const blob = norm(p.texto);
+      const score = palabras.filter((w) => blob.includes(w)).length;
+      return { p, score };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || String(b.p.fecha).localeCompare(String(a.p.fecha)))
+    .slice(0, max)
+    .map((x) => x.p);
+}
+
+function formatoFacebook(posts, largo = 300) {
+  return posts
+    .map((p) => {
+      const t = p.texto.length > largo ? p.texto.slice(0, largo).trimEnd() + "…" : p.texto;
+      return `• [${fechaCorta(p.fecha)}] ${t}`;
+    })
+    .join("\n");
+}
+
+export async function buildLiveContext(token) {
+  let publicaciones = [];
+  let podcasts = [];
+  const facebook = await leerFacebook();
+
+  if (token) {
+    try {
+      const pubs = await getPublicaciones(token, 1);
+      publicaciones = asList(pubs).slice(0, 40);
+    } catch (error) {
+      console.error("No se pudieron cargar publicaciones para el chat", error);
+    }
+
+    try {
+      const pods = await getPodcast(token);
+      podcasts = asList(pods).slice(0, 20);
+    } catch (error) {
+      console.error("No se pudieron cargar podcasts para el chat", error);
+    }
+  }
+
+  const resumenPubs = publicaciones
+    .map((p, i) => {
+      const lugar = p.ubicacion || p.aula || "sin ubicación";
+      return `${i + 1}. [${p.created_at || ""}] ${p.autor || "Autor"} | ${p.tema || "General"} | ${p.titulo || "Sin título"} | Lugar: ${lugar} | ${String(p.contenido || "").slice(0, 280)}`;
+    })
+    .join("\n");
+
+  const resumenPods = podcasts
+    .map((p, i) => `${i + 1}. ${p.autor || "Autor"} | ${p.titulo || "Sin título"} | ${String(p.descripcion || "").slice(0, 180)}`)
+    .join("\n");
+
+  const resumenCampus = EDIFICIOS.map((e) => {
+    const aulas = e.aulas.map((a) => a.nombre).join(", ") || "sin aulas";
+    return `- ${e.nombre} (${e.lat}, ${e.lng}): ${e.descripcion} Aulas: ${aulas}`;
+  }).join("\n");
+
+  const resumenFb = facebook
+    .map((p, i) => `${i + 1}. [${p.fecha}${p.vence ? ` | vigente hasta ${p.vence}` : ""}] ${p.texto}`)
+    .join("\n");
+
+  return {
+    publicaciones,
+    podcasts,
+    facebook,
+    prompt: `
+=== DATOS EN TIEMPO REAL DE UNISPACE (usar SIEMPRE para responder sobre publicaciones, podcasts y el campus) ===
+Fecha de hoy: ${hoyLocal()}
+Campus: ${CAMPUS_CENTER.nombre}
+Dirección: ${CAMPUS_CENTER.direccion}
+Coordenadas: ${CAMPUS_CENTER.lat}, ${CAMPUS_CENTER.lng}
+
+EDIFICIOS Y AULAS:
+${resumenCampus}
+
+PUBLICACIONES OFICIALES DE LA ULS EN FACEBOOK (${FACEBOOK_PAGE}), de la más reciente a la más antigua:
+${resumenFb || "Todavía no hay publicaciones de Facebook cargadas."}
+
+PUBLICACIONES DEL FORO (incluye históricas de esta consulta):
+${resumenPubs || "Todavía no hay publicaciones públicas."}
+
+PODCASTS:
+${resumenPods || "Todavía no hay podcasts."}
+
+Si preguntan por novedades, resumí las publicaciones más recientes.
+Si preguntan por un aula o edificio, indicá nombre, para qué sirve y coordenadas.
+Si una publicación tiene ubicación, mencionála.
+`,
+  };
+}
+
+export function answerFromContext(question, context) {
+  const q = (question || "").toLowerCase();
+  const pubs = context.publicaciones || [];
+  const pods = context.podcasts || [];
+  const fb = context.facebook || [];
+
+  if (!q.trim()) {
+    return "Escribí tu pregunta y te ayudo con el campus, el foro o UniSpace.";
+  }
+
+  if (/(hola|qué onda|que onda|buenas|hey)/.test(q)) {
+    return "¡Qué onda! Soy Luterano, tu asistente de la ULS. Puedo contarte las novedades de la universidad, carreras y matrícula, publicaciones del foro, ubicaciones de aulas y edificios, el tour de bienvenida y objetos perdidos. ¿En qué te echo la mano?";
+  }
+
+  // Quien no sabe qué preguntar
+  if (/(no s[eé] qu[eé]|qu[eé] puedo preguntar|qu[eé] (sab[eé]s|pod[eé]s|puedes) hacer|^\s*(ayuda|ay[uú]dame|opciones|men[uú]|sugerencias?)\s*[?!.]*\s*$)/.test(q)) {
+    const lista = SUGERENCIAS.map((s) => `• ${s}`).join("\n");
+    return `Te cuento qué puedo hacer. Probá preguntarme, por ejemplo:\n${lista}\nTambién puedo hablarte de podcasts, el tour de bienvenida y las aulas del campus.`;
+  }
+
+  // Pregunta explícita por Facebook / publicaciones oficiales
+  if (/(facebook|publicaciones de la (uls|universidad)|p[aá]gina oficial|\bredes\b)/.test(q)) {
+    if (!fb.length) {
+      return `Todavía no tengo publicaciones de Facebook cargadas. Podés verlas en ${FACEBOOK_PAGE}.`;
+    }
+    const hits = buscarFacebook(question, fb, 3);
+    const lista = hits.length ? hits : fb.slice(0, 5);
+    return `Esto es lo más reciente de la página oficial de la ULS en Facebook:\n${formatoFacebook(lista, 260)}\nMás en ${FACEBOOK_PAGE}`;
+  }
+
+  if (/(mapa|edificio|aula|cafetería|cafeteria|biblioteca|campus|ubicación|ubicacion)/.test(q)) {
+    const match = EDIFICIOS.find((e) =>
+      q.includes(e.nombre.toLowerCase()) ||
+      e.aulas.some((a) => q.includes(a.nombre.toLowerCase())) ||
+      (q.includes("cafeteria") && e.id === "cafeteria") ||
+      (q.includes("cafetería") && e.id === "cafeteria") ||
+      (q.includes("biblioteca") && e.id === "biblioteca")
+    ) || EDIFICIOS.find((e) => q.includes(e.id));
+
+    if (match) {
+      const aulas = match.aulas.map((a) => a.nombre).join(", ") || "este punto no tiene aulas internas";
+      return `${match.nombre} está en el campus ULS (${match.lat}, ${match.lng}). ${match.descripcion} Aulas/espacios: ${aulas}. Lo ves en el mapa interactivo del panel.`;
+    }
+
+    return `El campus está en ${CAMPUS_CENTER.direccion} (${CAMPUS_CENTER.lat}, ${CAMPUS_CENTER.lng}). En el mapa ves Rectoría, facultades, biblioteca, cafetería, auditorio, parqueo y cada aula. Abrí “Mapa del campus” en el panel.`;
+  }
+
+  if (/(tour|bienvenida|recorrido)/.test(q)) {
+    return "El tour de bienvenida te guía desde el portón principal por Rectoría, aulas, biblioteca, cafetería y auditorio. Entrá a “Tour de bienvenida” en el panel y seguí las tarjetas interactivas.";
+  }
+
+  if (/(perdid|encontrad|objeto)/.test(q)) {
+    return "En “Objetos perdidos” podés reportar o buscar algo. Indicá el edificio o aula donde se perdió o se encontró. También podés preguntarme si alguien lo publicó en el foro.";
+  }
+
+  if (/(podcast)/.test(q)) {
+    if (!pods.length) return "Aún no hay podcasts en UniSpace. Podés subir el primero desde el dashboard.";
+    const top = pods.slice(0, 5).map((p) => `• ${p.titulo || "Sin título"} (${p.autor || "autor"})`).join("\n");
+    return `Estos son los podcasts más recientes:\n${top}`;
+  }
+
+  // Búsqueda por palabras clave en las publicaciones de Facebook (carreras, matrícula, cursos, becas...)
+  const fbHits = buscarFacebook(question, fb, 3);
+  if (fbHits.length) {
+    return `Encontré esto en las publicaciones oficiales de la ULS en Facebook:\n${formatoFacebook(fbHits, 420)}\nMás en ${FACEBOOK_PAGE}`;
+  }
+
+  const hits = pubs.filter((p) => {
+    const blob = `${p.titulo || ""} ${p.tema || ""} ${p.contenido || ""} ${p.ubicacion || ""} ${p.autor || ""}`.toLowerCase();
+    return q.split(/\s+/).filter((w) => w.length > 3).some((w) => blob.includes(w));
+  });
+
+  if (hits.length) {
+    const lines = hits.slice(0, 6).map((p) => {
+      const lugar = p.ubicacion ? ` en ${p.ubicacion}` : "";
+      return `• ${p.titulo || "Publicación"} (${p.autor || "autor"})${lugar}: ${String(p.contenido || "").slice(0, 160)}`;
+    });
+    return `Encontré esto en las publicaciones del foro (incluye históricas):\n${lines.join("\n")}`;
+  }
+
+  const generico = /(publicacion|publicación|foro|novedad|noticia|anuncio|evento|reciente|qué hay|que hay)/.test(q);
+
+  if (pubs.length && generico) {
+    const lines = pubs.slice(0, 6).map((p) => {
+      const lugar = p.ubicacion ? ` · ${p.ubicacion}` : "";
+      return `• ${p.titulo || "Sin título"} — ${p.autor || "autor"}${lugar}`;
+    });
+    const extra = fb.length ? `\n\nY en Facebook, la ULS publicó:\n${formatoFacebook(fb.slice(0, 3), 160)}` : "";
+    return `Últimas publicaciones del foro UniSpace:\n${lines.join("\n")}${extra}\nSi querés detalle de alguna, decime el título.`;
+  }
+
+  if (fb.length && generico) {
+    return `Esto es lo más reciente de la ULS en Facebook:\n${formatoFacebook(fb.slice(0, 5), 200)}\nMás en ${FACEBOOK_PAGE}`;
+  }
+
+  if (pubs.length) {
+    const latest = pubs[0];
+    return `La publicación más reciente es “${latest.titulo || "Sin título"}” de ${latest.autor || "un miembro de la comunidad"}${latest.ubicacion ? ` en ${latest.ubicacion}` : ""}. También te puedo orientar sobre aulas, el mapa, el tour o podcasts.`;
+  }
+
+  return "Puedo ayudarte con las novedades de la ULS, carreras y matrícula, el mapa del campus, aulas, el foro, podcasts, el tour de bienvenida y objetos perdidos. Si no sabés qué preguntar, escribí “ayuda” y te doy ideas.";
+}

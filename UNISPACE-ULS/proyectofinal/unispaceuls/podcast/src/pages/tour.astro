@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../layouts/Layout.astro";
+import Navbar from "@/components/navbar/navbar.astro";
+import Sidebar from "@/components/Sidebar.astro";
+import WelcomeTour from "@/components/vue/WelcomeTour.vue";
+import { getUser } from "@/lib/auth-server";
+
+const token = Astro.cookies.get("token")?.value;
+if (!token) return Astro.redirect("/login");
+const user = await getUser(token);
+---
+
+<BaseLayout>
+  <div class="navbar-fixed"><Navbar {...user} /></div>
+  <aside class="sidebar-area"><Sidebar /></aside>
+  <main class="page-main">
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <h1 class="text-3xl font-black">Tour de bienvenida</h1>
+        <p>Recorrido guiado para estudiantes de nuevo ingreso: portón, rectoría, aulas, biblioteca, cafetería y auditorio.</p>
+        <WelcomeTour client:load />
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .navbar-fixed { position: sticky; top: 0; z-index: 40; }
+  .sidebar-area { position: fixed; top: 90px; left: 18px; width: 220px; z-index: 30; }
+  .page-main { max-width: 860px; margin: 0 auto; padding: 100px 1.5rem 4rem; }
+  @media (max-width: 768px) { .sidebar-area { display: none; } }
+</style>

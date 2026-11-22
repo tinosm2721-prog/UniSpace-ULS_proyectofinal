@@ -1,0 +1,337 @@
+---
+import { lugaresPlanos } from "../../data/campus.js";
+const lugares = lugaresPlanos();
+---
+<form id="publicarForm">
+
+  <input
+    type="text"
+    name="tema"
+    placeholder="Tema"
+    required
+  />
+
+  <input
+    type="text"
+    name="titulo"
+    placeholder="Titulo"
+    required
+  />
+
+  <textarea
+    name="contenido"
+    placeholder="Contenido"
+    required
+  ></textarea>
+
+  <label class="ubicacion-label">Ubicación de la actividad (campus)</label>
+  <select id="lugarSelect" name="lugar_id" class="lugar-select">
+    <option value="">Sin ubicación</option>
+    {lugares.map((lugar) => (
+      <option
+        value={lugar.id}
+        data-label={lugar.label}
+        data-aula={lugar.aula || ""}
+        data-lat={lugar.lat}
+        data-lng={lugar.lng}
+      >
+        {lugar.label}
+      </option>
+    ))}
+  </select>
+  <input type="hidden" name="ubicacion" id="ubicacion" />
+  <input type="hidden" name="aula" id="aula" />
+  <input type="hidden" name="lat" id="lat" />
+  <input type="hidden" name="lng" id="lng" />
+
+  <input
+    type="file"
+    name="imagen"
+    accept="image/*"
+  />
+
+  <div class="radio-group">
+
+    <label>Visibilidad:</label>
+
+    <label>
+      <input
+        type="radio"
+        name="publica"
+        value="1"
+        checked
+      />
+
+      <span>🌍 Público</span>
+    </label>
+
+    <label>
+      <input
+        type="radio"
+        name="publica"
+        value="0"
+      />
+
+      <span>🔒 Privado</span>
+    </label>
+
+  </div>
+
+  <button
+    type="submit"
+    class="btn-publicar"
+  >
+    Publicar
+  </button>
+
+</form>
+
+<script type="module">
+
+  import {
+    crearPublicacion
+  } from "/src/lib/publicaciones.js";
+
+  const form =
+    document.getElementById(
+      "publicarForm"
+    );
+
+  form?.addEventListener(
+    "submit",
+    async (e) => {
+
+      e.preventDefault();
+
+      try {
+
+        const formData =
+          new FormData(form);
+
+        const select = document.getElementById("lugarSelect");
+        const option = select?.selectedOptions?.[0];
+        if (option?.value) {
+          formData.set("ubicacion", option.dataset.label || "");
+          formData.set("aula", option.dataset.aula || "");
+          formData.set("lat", option.dataset.lat || "");
+          formData.set("lng", option.dataset.lng || "");
+        }
+
+        await crearPublicacion(
+          formData
+        );
+
+        form.reset();
+
+        alert(
+          "Publicación creada"
+        );
+
+        window.location.reload();
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          error.message ||
+          "Error al publicar"
+        );
+      }
+    }
+  );
+
+</script>
+<style>
+/* =========================
+   FORMULARIO SIMPLE MODERNO
+========================= */
+
+#publicarForm{
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:1rem;
+
+  width:100%;
+}
+
+/* INPUTS */
+
+#publicarForm input[type="text"],
+#publicarForm textarea,
+#publicarForm select{
+
+  width:100%;
+
+  padding:1rem;
+
+  border:none;
+
+  border-radius:14px;
+
+  background:#f1f5f9;
+
+  font-size:1rem;
+
+  color:#0f172a;
+
+  outline:none;
+
+  transition:.2s ease;
+}
+
+.ubicacion-label{
+  font-weight:700;
+  color:#334155;
+  font-size:.9rem;
+}
+
+/* FOCUS */
+
+#publicarForm input[type="text"]:focus,
+#publicarForm textarea:focus{
+
+  background:#ffffff;
+
+  box-shadow:
+    0 0 0 3px rgba(59,130,246,.2);
+}
+
+/* TEXTAREA */
+
+#publicarForm textarea{
+
+  min-height:140px;
+
+  resize:none;
+
+  line-height:1.5;
+}
+
+/* FILE */
+
+#publicarForm input[type="file"]{
+
+  padding:.9rem;
+
+  border-radius:14px;
+
+  background:#f8fafc;
+
+  border:2px dashed #cbd5e1;
+
+  cursor:pointer;
+
+  transition:.2s ease;
+}
+
+#publicarForm input[type="file"]:hover{
+
+  border-color:#3b82f6;
+
+  background:#eff6ff;
+}
+
+/* RADIO */
+
+.radio-group{
+
+  display:flex;
+
+  gap:1rem;
+
+  align-items:center;
+
+  flex-wrap:wrap;
+
+  background:#f8fafc;
+
+  padding:1rem;
+
+  border-radius:14px;
+}
+
+.radio-group label{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:.45rem;
+
+  font-weight:600;
+
+  color:#334155;
+
+  cursor:pointer;
+}
+
+.radio-group input[type="radio"]{
+
+  accent-color:#2563eb;
+}
+
+/* BOTON */
+
+.btn-publicar{
+
+  border:none;
+
+  padding:1rem;
+
+  border-radius:14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #7c3aed
+    );
+
+  color:white;
+
+  font-size:1rem;
+
+  font-weight:700;
+
+  cursor:pointer;
+
+  transition:.2s ease;
+}
+
+/* HOVER */
+
+.btn-publicar:hover{
+
+  transform:translateY(-2px);
+
+  opacity:.95;
+}
+
+/* ACTIVE */
+
+.btn-publicar:active{
+
+  transform:scale(.98);
+}
+
+/* RESPONSIVE */
+
+@media (max-width:768px){
+
+  .radio-group{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+  }
+
+  .btn-publicar{
+
+    width:100%;
+  }
+}
+</style>

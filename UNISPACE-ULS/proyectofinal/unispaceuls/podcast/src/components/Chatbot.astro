@@ -1,0 +1,617 @@
+---
+// src/components/Chatbot.astro
+---
+
+<div id="chatbot-container">
+
+  <!-- Botón flotante -->
+  <button id="chatbot-toggle" aria-label="Abrir Luterano">
+    <div id="btn-robot">
+      <svg viewBox="0 0 40 40" width="38" height="38" xmlns="http://www.w3.org/2000/svg">
+        <line x1="20" y1="4" x2="20" y2="10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="20" cy="3" r="2.5" fill="#f0a500"/>
+        <rect x="8" y="10" width="24" height="18" rx="5" fill="white" opacity="0.95"/>
+        <rect x="12" y="15" width="6" height="5" rx="2" fill="#1a4fa0"/>
+        <rect x="22" y="15" width="6" height="5" rx="2" fill="#1a4fa0"/>
+        <circle cx="14" cy="16.5" r="1" fill="white"/>
+        <circle cx="24" cy="16.5" r="1" fill="white"/>
+        <rect x="13" y="23" width="14" height="3" rx="1.5" fill="#1a4fa0" opacity="0.5"/>
+        <rect x="15" y="23.5" width="4" height="2" rx="1" fill="#1a4fa0"/>
+        <rect x="21" y="23.5" width="4" height="2" rx="1" fill="#1a4fa0"/>
+        <rect x="14" y="29" width="12" height="6" rx="3" fill="white" opacity="0.7"/>
+      </svg>
+    </div>
+    <div id="btn-close" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </div>
+  </button>
+
+  <!-- Ventana del chat -->
+  <div id="chatbot-window" class="hidden">
+
+    <!-- Header -->
+    <div id="chatbot-header">
+      <div class="header-left">
+        <div class="header-robot">
+          <svg viewBox="0 0 60 70" width="52" height="60" xmlns="http://www.w3.org/2000/svg">
+            <line x1="30" y1="2" x2="30" y2="12" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="30" cy="1.5" r="3.5" fill="#f0a500"/>
+            <rect x="10" y="12" width="40" height="28" rx="8" fill="white"/>
+            <rect x="15" y="19" width="11" height="9" rx="3" fill="#1a4fa0"/>
+            <rect x="34" y="19" width="11" height="9" rx="3" fill="#1a4fa0"/>
+            <circle cx="18" cy="21" r="2" fill="white"/>
+            <circle cx="37" cy="21" r="2" fill="white"/>
+            <path d="M20 33 Q30 39 40 33" stroke="#1a4fa0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="14" cy="30" r="4" fill="#f0a500" opacity="0.4"/>
+            <circle cx="46" cy="30" r="4" fill="#f0a500" opacity="0.4"/>
+            <rect x="25" y="40" width="10" height="5" rx="2" fill="rgba(255,255,255,0.6)"/>
+            <rect x="12" y="45" width="36" height="22" rx="8" fill="white" opacity="0.85"/>
+            <circle cx="24" cy="54" r="3" fill="#1a4fa0" opacity="0.5"/>
+            <circle cx="36" cy="54" r="3" fill="#f0a500" opacity="0.7"/>
+            <rect x="20" y="60" width="20" height="4" rx="2" fill="#1a4fa0" opacity="0.3"/>
+          </svg>
+        </div>
+        <div class="header-info">
+          <span class="bot-name">Luterano</span>
+          <span class="bot-desc">Asistente virtual ULS</span>
+          <span class="bot-status"><span class="dot">●</span> En línea</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="chatbot-messages">
+      <div class="message bot-message">
+        <div class="bot-avatar-sm">
+          <svg viewBox="0 0 30 30" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="5" width="22" height="18" rx="5" fill="#1a4fa0"/>
+            <rect x="7" y="9" width="6" height="5" rx="2" fill="white"/>
+            <rect x="17" y="9" width="6" height="5" rx="2" fill="white"/>
+            <circle cx="9" cy="10.5" r="1.2" fill="#1a4fa0"/>
+            <circle cx="19" cy="10.5" r="1.2" fill="#1a4fa0"/>
+            <path d="M10 18 Q15 21 20 18" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="bubble-wrap">
+          <div class="message-bubble">
+            ¡Qué onda! 👋 Soy <strong>Luterano</strong>, tu asistente virtual de la <strong>Universidad Luterana Salvadoreña</strong>. ¿En qué te puedo echar la mano hoy?
+          </div>
+          <span class="message-time" id="initial-time"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div id="chatbot-input-area">
+      <input
+        type="text"
+        id="chatbot-input"
+        placeholder="Escribí tu pregunta..."
+        autocomplete="off"
+        maxlength="500"
+      />
+      <button id="chatbot-send" aria-label="Enviar mensaje">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --uls-blue: #1a4fa0;
+    --uls-blue-dark: #0f3275;
+    --uls-blue-light: #2563c4;
+    --uls-accent: #f0a500;
+    --uls-accent-light: #ffd166;
+    --uls-white: #ffffff;
+    --uls-gray-light: #f0f4fb;
+    --uls-gray: #dde5f0;
+    --uls-text: #1e293b;
+    --uls-text-muted: #64748b;
+    --user-bubble: #1a4fa0;
+    --bot-bubble: #ffffff;
+  }
+
+  #chatbot-toggle {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--uls-blue-light), var(--uls-blue-dark));
+    border: 3px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 28px rgba(26,79,160,0.45), 0 0 0 0 rgba(26,79,160,0.3);
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+    animation: float-btn 3s ease-in-out infinite;
+  }
+
+  @keyframes float-btn {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  #chatbot-toggle:hover {
+    transform: scale(1.12) translateY(-3px);
+    box-shadow: 0 14px 35px rgba(26,79,160,0.55);
+    animation: none;
+  }
+
+  #chatbot-toggle::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    background: rgba(26,79,160,0.2);
+    animation: pulse-ring 2.5s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    70% { transform: scale(1.25); opacity: 0; }
+    100% { transform: scale(1.25); opacity: 0; }
+  }
+
+  #chatbot-window {
+    position: fixed;
+    bottom: 108px;
+    right: 28px;
+    width: 380px;
+    height: 540px;
+    background: var(--uls-gray-light);
+    border-radius: 24px;
+    box-shadow: 0 24px 70px rgba(26,79,160,0.22), 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9998;
+    border: 1px solid rgba(26,79,160,0.12);
+    transform-origin: bottom right;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease;
+  }
+
+  #chatbot-window.hidden {
+    transform: scale(0.75) translateY(30px);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #chatbot-header {
+    background: linear-gradient(135deg, var(--uls-blue) 0%, var(--uls-blue-dark) 100%);
+    padding: 18px 20px 14px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #chatbot-header::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(240,165,0,0.15);
+  }
+
+  #chatbot-header::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 30px;
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header-robot {
+    background: rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 6px 8px 2px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    animation: robot-bounce 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes robot-bounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-3px) rotate(-2deg); }
+    75% { transform: translateY(-2px) rotate(2deg); }
+  }
+
+  .header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .bot-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 0.3px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .bot-desc {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.7);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .bot-status {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.8);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin-top: 2px;
+  }
+
+  .dot { color: #4ade80; font-size: 0.75rem; }
+
+  #chatbot-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+
+  #chatbot-messages::-webkit-scrollbar { width: 4px; }
+  #chatbot-messages::-webkit-scrollbar-track { background: transparent; }
+  #chatbot-messages::-webkit-scrollbar-thumb { background: var(--uls-gray); border-radius: 4px; }
+
+  .message {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    animation: msgIn 0.3s ease;
+    max-width: 88%;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .bot-message { align-self: flex-start; }
+  .user-message { align-self: flex-end; flex-direction: row-reverse; }
+
+  .bot-avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--uls-blue-light), var(--uls-blue-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(26,79,160,0.3);
+  }
+
+  .user-avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f0a500, #e08800);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 3px 10px rgba(240,165,0,0.35);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .bubble-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .message-bubble {
+    padding: 11px 15px;
+    border-radius: 18px;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    word-break: break-word;
+  }
+
+  .bot-message .message-bubble {
+    background: var(--bot-bubble);
+    color: var(--uls-text);
+    border-bottom-left-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  }
+
+  .user-message .message-bubble {
+    background: linear-gradient(135deg, var(--uls-blue-light), var(--uls-blue));
+    color: white;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 3px 12px rgba(26,79,160,0.3);
+  }
+
+  .message-time {
+    font-size: 0.67rem;
+    color: var(--uls-text-muted);
+    padding: 0 4px;
+  }
+
+  .user-message .message-time { text-align: right; }
+
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 13px 16px;
+    background: white;
+    border-radius: 18px;
+    border-bottom-left-radius: 5px;
+    width: fit-content;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  }
+
+  .typing-dot {
+    width: 7px; height: 7px;
+    background: var(--uls-blue);
+    border-radius: 50%;
+    animation: tdot 1.3s ease-in-out infinite;
+    opacity: 0.5;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes tdot {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  #chatbot-input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: white;
+    border-top: 1px solid var(--uls-gray);
+    flex-shrink: 0;
+  }
+
+  #chatbot-input {
+    flex: 1;
+    padding: 11px 16px;
+    border: 1.5px solid var(--uls-gray);
+    border-radius: 25px;
+    font-size: 0.875rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: var(--uls-text);
+    background: var(--uls-gray-light);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #chatbot-input:focus {
+    border-color: var(--uls-blue-light);
+    box-shadow: 0 0 0 3px rgba(37,99,196,0.1);
+    background: white;
+  }
+
+  #chatbot-input::placeholder { color: var(--uls-text-muted); }
+
+  #chatbot-send {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--uls-blue-light), var(--uls-blue));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(26,79,160,0.35);
+  }
+
+  #chatbot-send:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 18px rgba(26,79,160,0.45);
+  }
+
+  #chatbot-send:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (max-width: 480px) {
+    #chatbot-window {
+      width: calc(100vw - 20px);
+      right: 10px;
+      bottom: 92px;
+      height: 500px;
+    }
+    #chatbot-toggle {
+      right: 16px;
+      bottom: 18px;
+    }
+  }
+</style>
+
+<script>
+  function initChatbot() {
+    const toggle   = document.getElementById('chatbot-toggle');
+    const window_  = document.getElementById('chatbot-window');
+    const input    = document.getElementById('chatbot-input');
+    const sendBtn  = document.getElementById('chatbot-send');
+    const messages = document.getElementById('chatbot-messages');
+    const btnRobot = document.getElementById('btn-robot');
+    const btnClose = document.getElementById('btn-close');
+    const initTime = document.getElementById('initial-time');
+
+    // Si no encuentra los elementos, salir sin error
+    if (!toggle || !window_ || !input || !sendBtn || !messages) return;
+
+    let isOpen = false;
+    let isLoading = false;
+    let history = [];
+
+    initTime.textContent = getTime();
+
+    function getTime() {
+      return new Date().toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Toggle abrir/cerrar
+    toggle.addEventListener('click', () => {
+      isOpen = !isOpen;
+      window_.classList.toggle('hidden', !isOpen);
+      btnRobot.style.display = isOpen ? 'none' : 'flex';
+      btnClose.style.display = isOpen ? 'flex' : 'none';
+      if (isOpen) setTimeout(() => input.focus(), 300);
+    });
+
+    function addMessage(text, isUser = false) {
+      const div = document.createElement('div');
+      div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+
+      const avatarDiv = document.createElement('div');
+
+      if (isUser) {
+        avatarDiv.className = 'user-avatar-sm';
+        avatarDiv.textContent = 'Yo';
+      } else {
+        avatarDiv.className = 'bot-avatar-sm';
+        avatarDiv.innerHTML = `<svg viewBox="0 0 30 30" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="5" width="22" height="18" rx="5" fill="white"/>
+          <rect x="7" y="9" width="6" height="5" rx="2" fill="#1a4fa0"/>
+          <rect x="17" y="9" width="6" height="5" rx="2" fill="#1a4fa0"/>
+          <circle cx="9" cy="10.5" r="1.2" fill="white"/>
+          <circle cx="19" cy="10.5" r="1.2" fill="white"/>
+          <path d="M10 18 Q15 21 20 18" stroke="#1a4fa0" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        </svg>`;
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-wrap';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+      const time = document.createElement('span');
+      time.className = 'message-time';
+      time.textContent = getTime();
+
+      wrap.appendChild(bubble);
+      wrap.appendChild(time);
+      div.appendChild(avatarDiv);
+      div.appendChild(wrap);
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'message bot-message';
+      div.id = 'typing';
+      div.innerHTML = `
+        <div class="bot-avatar-sm">
+          <svg viewBox="0 0 30 30" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="5" width="22" height="18" rx="5" fill="white"/>
+            <rect x="7" y="9" width="6" height="5" rx="2" fill="#1a4fa0"/>
+            <rect x="17" y="9" width="6" height="5" rx="2" fill="#1a4fa0"/>
+            <circle cx="9" cy="10.5" r="1.2" fill="white"/>
+            <circle cx="19" cy="10.5" r="1.2" fill="white"/>
+            <path d="M10 18 Q15 21 20 18" stroke="#1a4fa0" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="bubble-wrap">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>`;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function hideTyping() {
+      document.getElementById('typing')?.remove();
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || isLoading) return;
+
+      isLoading = true;
+      sendBtn.disabled = true;
+      input.disabled = true;
+      input.value = '';
+
+      addMessage(text, true);
+      history.push({ role: 'user', content: text });
+      showTyping();
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: history }),
+        });
+
+        const data = await res.json();
+        hideTyping();
+
+        if (!res.ok) {
+          addMessage('Puchica, algo salió mal. Intentá de nuevo en un momento. 😅');
+          history.pop();
+        } else {
+          addMessage(data.message);
+          history.push({ role: 'assistant', content: data.message });
+          if (history.length > 20) history = history.slice(-20);
+        }
+      } catch (e) {
+        hideTyping();
+        addMessage('¡Ay! No me pude conectar. Revisá tu conexión e intentá de nuevo. 🔌');
+        history.pop();
+      } finally {
+        isLoading = false;
+        sendBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+  }
+
+  // Carga inicial normal
+  document.addEventListener('DOMContentLoaded', initChatbot);
+
+  // Navegación con ViewTransitions de Astro (evita que el script muera al cambiar de página)
+  document.addEventListener('astro:page-load', initChatbot);
+</script>

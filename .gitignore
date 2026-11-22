@@ -1,0 +1,52 @@
+# Dependencias
+node_modules/
+vendor/
+bower_components/
+
+# Variables de entorno y secretos (se conservan los .env.example)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Builds y caches
+dist/
+dist-ssr/
+build/
+coverage/
+.cache/
+*.local
+*.tsbuildinfo
+.eslintcache
+
+# Laravel
+/proyectofinal/api/astrolink-api/public/hot
+/proyectofinal/api/astrolink-api/public/storage
+/proyectofinal/api/astrolink-api/storage/*.key
+/proyectofinal/api/astrolink-api/storage/framework/cache/*
+/proyectofinal/api/astrolink-api/storage/framework/sessions/*
+/proyectofinal/api/astrolink-api/storage/framework/views/*
+/proyectofinal/api/astrolink-api/storage/logs/*
+/proyectofinal/api/astrolink-api/bootstrap/cache/*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
