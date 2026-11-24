@@ -57,6 +57,24 @@ Route::get('/_diagnostico', function (\Illuminate\Http\Request $request) {
     } catch (\Throwable $e) {
         $r['login_error'] = get_class($e) . ': ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine();
     }
+    // Prueba de registro dentro de una transacción que SIEMPRE se revierte (no guarda nada)
+    \Illuminate\Support\Facades\DB::beginTransaction();
+    try {
+        $u = \App\Models\User::create([
+            'nombre' => 'diag', 'apellido' => 'diag',
+            'email' => 'diag-' . uniqid() . '@test.invalid',
+            'password' => \Illuminate\Support\Facades\Hash::make('secreto123'),
+        ]);
+        $r['registro_paso_1_usuario'] = 'ok';
+        \Illuminate\Support\Facades\DB::table('perfiles')->insert(['user_id' => $u->id, 'fecha_nacimiento' => '1988-05-27']);
+        $r['registro_paso_2_perfil'] = 'ok';
+        $u->createToken('auth_token');
+        $r['registro_paso_3_token'] = 'ok';
+    } catch (\Throwable $e) {
+        $r['registro_error'] = get_class($e) . ': ' . $e->getMessage() . ' en linea ' . $e->getLine();
+    } finally {
+        \Illuminate\Support\Facades\DB::rollBack();
+    }
     return response()->json($r);
 });
         
