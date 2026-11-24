@@ -25,6 +25,32 @@ use App\Http\Controllers\PerfilIdiomaController;
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
         Route::get('/user', [UsuarioController::class, 'index']);
+
+// TEMPORAL: diagnóstico. Eliminar después de corregir el error de login.
+Route::get('/_diagnostico', function (\Illuminate\Http\Request $request) {
+    $clave = env('DEBUG_KEY');
+    if (!$clave || !hash_equals($clave, (string) $request->header('X-Debug-Key'))) {
+        abort(404);
+    }
+    $r = [];
+    try { \Illuminate\Support\Facades\DB::select('select 1'); $r['conexion_db'] = 'ok'; }
+    catch (\Throwable $e) { $r['conexion_db'] = 'ERROR: ' . $e->getMessage(); }
+    foreach (['users', 'personal_access_tokens', 'cache', 'sessions', 'perfiles', 'jobs'] as $t) {
+        try { $r['tabla_' . $t] = \Illuminate\Support\Facades\Schema::hasTable($t) ? 'existe' : 'NO existe'; }
+        catch (\Throwable $e) { $r['tabla_' . $t] = 'ERROR: ' . $e->getMessage(); }
+    }
+    foreach (['esta_activo', 'ultimo_login'] as $c) {
+        try { $r['columna_users_' . $c] = \Illuminate\Support\Facades\Schema::hasColumn('users', $c) ? 'existe' : 'NO existe'; }
+        catch (\Throwable $e) { $r['columna_users_' . $c] = 'ERROR: ' . $e->getMessage(); }
+    }
+    try { \Illuminate\Support\Facades\Cache::put('diag', 1, 60); $r['cache_escritura'] = 'ok'; }
+    catch (\Throwable $e) { $r['cache_escritura'] = 'ERROR: ' . $e->getMessage(); }
+    try {
+        $u = \Illuminate\Support\Facades\DB::table('users')->where('email', 'x@x.com')->first();
+        $r['consulta_users'] = 'ok';
+    } catch (\Throwable $e) { $r['consulta_users'] = 'ERROR: ' . $e->getMessage(); }
+    return response()->json($r);
+});
         
 
 /*
