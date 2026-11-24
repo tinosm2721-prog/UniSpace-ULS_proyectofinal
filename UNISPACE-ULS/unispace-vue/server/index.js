@@ -152,6 +152,10 @@ const podcastSchema = z.object({
 
 // ---------- Sesión y límites ----------
 function getToken(req) {
+  // El frontend (Netlify) y este servidor (Render) están en dominios distintos:
+  // la cookie no llega, así que el token viaja en el encabezado Authorization.
+  const auth = req.headers.authorization || "";
+  if (auth.startsWith("Bearer ")) return auth.slice(7).trim();
   const m = (req.headers.cookie || "").match(/(?:^|;\s*)token=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : undefined;
 }

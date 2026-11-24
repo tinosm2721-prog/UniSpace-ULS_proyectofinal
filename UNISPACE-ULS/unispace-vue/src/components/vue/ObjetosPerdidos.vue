@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { LUGARES_BASE, lugaresPlanos } from "@/data/lugares.js";
 import { notify, confirmar } from "@/lib/ui.js";
+import { NODE_API_URL, authHeaders } from "@/lib/config.js";
 
 const LS_KEY = "unispace-objetos";
 const items = ref([]);
@@ -50,7 +51,7 @@ function sesionExpirada() {
 
 async function load() {
   try {
-    const res = await fetch("/api/objetos-perdidos", { credentials: "same-origin" });
+    const res = await fetch(`${NODE_API_URL}/api/objetos-perdidos`, { credentials: "same-origin", headers: authHeaders() });
     if (res.status === 401) {
       sesionExpirada();
       items.value = [];
@@ -69,10 +70,10 @@ async function save() {
   saving.value = true;
   const payload = { ...form.value, created_at: new Date().toISOString() };
   try {
-    const res = await fetch("/api/objetos-perdidos", {
+    const res = await fetch(`${NODE_API_URL}/api/objetos-perdidos`, {
       method: "POST",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(payload),
     });
     if (res.status === 401) {
@@ -101,9 +102,10 @@ async function resolver(item) {
   });
   if (!ok) return;
   try {
-    const res = await fetch(`/api/objetos-perdidos/${item.id}`, {
+    const res = await fetch(`${NODE_API_URL}/api/objetos-perdidos/${item.id}`, {
       method: "DELETE",
       credentials: "same-origin",
+      headers: authHeaders(),
     });
     if (res.status === 401) {
       sesionExpirada();

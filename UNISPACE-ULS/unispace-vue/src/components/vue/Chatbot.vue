@@ -5,6 +5,7 @@ import { lugaresPlanos } from "@/data/lugares.js";
 import { crearPublicacion } from "@/lib/publicaciones.js";
 import { createPodcast } from "@/lib/podcast.js";
 import { notify } from "@/lib/ui.js";
+import { NODE_API_URL, authHeaders } from "@/lib/config.js";
 
 const router = useRouter();
 const lugares = lugaresPlanos();
@@ -55,10 +56,10 @@ async function send() {
   }));
 
   try {
-    const res = await fetch("/api/chat", {
+    const res = await fetch(`${NODE_API_URL}/api/chat`, {
       method: "POST",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ messages: history }),
     });
     if (res.status === 401) {
