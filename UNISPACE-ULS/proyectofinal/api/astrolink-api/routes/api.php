@@ -49,6 +49,14 @@ Route::get('/_diagnostico', function (\Illuminate\Http\Request $request) {
         $u = \Illuminate\Support\Facades\DB::table('users')->where('email', 'x@x.com')->first();
         $r['consulta_users'] = 'ok';
     } catch (\Throwable $e) { $r['consulta_users'] = 'ERROR: ' . $e->getMessage(); }
+    try {
+        $req = \Illuminate\Http\Request::create('/api/auth/login', 'POST', ['email' => 'x@x.com', 'password' => 'x']);
+        $req->headers->set('Accept', 'application/json');
+        $resp = app(AuthController::class)->login($req);
+        $r['login_resultado'] = $resp->getStatusCode();
+    } catch (\Throwable $e) {
+        $r['login_error'] = get_class($e) . ': ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine();
+    }
     return response()->json($r);
 });
         
